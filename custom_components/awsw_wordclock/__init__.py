@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.device_registry import format_mac
 
 from .api import WordClockApi
 from .const import (
@@ -21,6 +24,9 @@ from .coordinator import WordClockConfigEntry, WordClockCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+# Unique id pattern of the switches created by version 1.x of this integration.
+LEGACY_SWITCH_UNIQUE_ID = re.compile(r"_word_\d+$")
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: WordClockConfigEntry) -> bool:
     """Set up AWSW WordClock from a config entry."""
@@ -29,13 +35,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: WordClockConfigEntry) ->
     await coordinator.async_config_entry_first_refresh()
 
     # Adopt the MAC as the entry unique id the first time we see it, so that a
-    # device that changed its IP can still be recognised.
+    # device that changed its IP can still be recognised. Entity unique ids are
+    # derived from it, so this has to happen before the platforms are set up.
     if entry.unique_id is None and (mac := coordinator.data.get(KEY_MAC)):
-        hass.config_entries.async_update_entry(entry, unique_id=_format_mac(mac))
+        hass.config_entries.async_update_entry(entry, unique_id=format_mac(mac))
+
+    _async_rekey_registry(hass, entry)
 
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
 
 
@@ -67,6 +75,8 @@ async def async_migrate_entry(hass: HomeAssistant, entry: WordClockConfigEntry) 
         data.pop(LEGACY_CONF_LANGUAGE, None)
         options.pop(LEGACY_CONF_LANGUAGE, None)
 
+        _async_remove_legacy_entities(hass, entry)
+
         hass.config_entries.async_update_entry(
             entry, data=data, options=options, version=2
         )
@@ -75,13 +85,61 @@ async def async_migrate_entry(hass: HomeAssistant, entry: WordClockConfigEntry) 
     return True
 
 
-async def _async_update_listener(
+def _async_remove_legacy_entities(
     hass: HomeAssistant, entry: WordClockConfigEntry
 ) -> None:
-    """Reload the entry when its options change."""
-    await hass.config_entries.async_reload(entry.entry_id)
+    """Drop the extra word switches and device row created by version 1.x.
+
+    Extra words are lights now, so the old switches would linger forever as
+    unavailable entities next to an empty duplicate device.
+    """
+    registry = er.async_get(hass)
+    for registry_entry in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if registry_entry.domain == "switch" and LEGACY_SWITCH_UNIQUE_ID.search(
+            registry_entry.unique_id
+        ):
+            registry.async_remove(registry_entry.entity_id)
+
+    host = entry.data.get(CONF_HOST) or entry.data.get(LEGACY_CONF_IP_ADDRESS)
+    if not host:
+        return
+    device_registry = dr.async_get(hass)
+    legacy_id = f"wordclock_{host.replace('.', '_')}"
+    if device := device_registry.async_get_device(identifiers={(DOMAIN, legacy_id)}):
+        device_registry.async_remove_device(device.id)
 
 
-def _format_mac(mac: str) -> str:
-    """Return a MAC address in the lowercase colon-separated form HA uses."""
-    return mac.replace("-", ":").lower()
+def _async_rekey_registry(hass: HomeAssistant, entry: WordClockConfigEntry) -> None:
+    """Move entities and the device onto the MAC-based identifier.
+
+    Entities are namespaced by the config entry unique id, which is the device
+    MAC. Installations created before that id existed used the config entry id
+    instead; remap them so nothing is orphaned.
+    """
+    if not entry.unique_id or entry.unique_id == entry.entry_id:
+        return
+
+    old_prefix = f"{entry.entry_id}_"
+    new_prefix = f"{entry.unique_id}_"
+
+    registry = er.async_get(hass)
+    for registry_entry in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if not registry_entry.unique_id.startswith(old_prefix):
+            continue
+        new_unique_id = new_prefix + registry_entry.unique_id[len(old_prefix) :]
+        if registry.async_get_entity_id(
+            registry_entry.domain, DOMAIN, new_unique_id
+        ):
+            # A rekeyed entity already exists; drop the leftover.
+            registry.async_remove(registry_entry.entity_id)
+            continue
+        registry.async_update_entity(
+            registry_entry.entity_id, new_unique_id=new_unique_id
+        )
+
+    device_registry = dr.async_get(hass)
+    old_identifiers = {(DOMAIN, entry.entry_id)}
+    if device := device_registry.async_get_device(identifiers=old_identifiers):
+        device_registry.async_update_device(
+            device.id, new_identifiers={(DOMAIN, entry.unique_id)}
+        )

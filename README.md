@@ -9,7 +9,7 @@ It talks to the clock's local JSON API, so everything works without a cloud acco
 ## Requirements
 
 - An AWSW WordClock running **firmware V5.0 or newer** (the JSON API under `/api/` must be present).
-- Home Assistant 2025.2 or newer.
+- Home Assistant 2025.3 or newer.
 
 ## Installation
 
@@ -76,7 +76,7 @@ check for updates, optimise Wi-Fi, and sync the clock to Home Assistant's time.
 
 Firmware version, available version, IP, Wi-Fi network and signal, device time, day/night
 status, NTP status and server, clock language, current brightness, plus binary sensors for
-time sync, online mode, update available and night mode.
+time sync, online mode and update available.
 
 Several of these are disabled by default; enable them on the device page if you want them.
 

@@ -32,9 +32,6 @@ REQUEST_TIMEOUT_SECONDS: Final = 10
 # /api/status at runtime and this is only the fallback.
 DEFAULT_INTENSITY_LIMIT: Final = 50
 
-# Number of extra word slots the firmware exposes.
-EXTRA_WORD_COUNT: Final = 12
-
 # --- /api/status keys -------------------------------------------------------
 
 KEY_EXTRA_WORDS: Final = "extraWords"
@@ -52,7 +49,6 @@ KEY_TIME_BRIGHTNESS_DAY: Final = "timeBrightnessDay"
 KEY_TIME_BRIGHTNESS_NIGHT: Final = "timeBrightnessNight"
 KEY_BACK_BRIGHTNESS_DAY: Final = "backBrightnessDay"
 KEY_BACK_BRIGHTNESS_NIGHT: Final = "backBrightnessNight"
-KEY_TICKER_BRIGHTNESS: Final = "tickerBrightness"
 KEY_TICKER_COLOR: Final = "tickerColor"
 
 # --- /api/action commands ---------------------------------------------------

@@ -115,7 +115,12 @@ class WordClockActionButton(WordClockEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Run the command."""
-        await self.coordinator.async_action(self.entity_description.command)
+        # A restart takes the device offline for a while, so polling right
+        # afterwards would only mark every entity unavailable.
+        refresh = self.entity_description.command != ACTION_RESTART
+        await self.coordinator.async_action(
+            self.entity_description.command, refresh=refresh
+        )
 
 
 class WordClockSyncTimeButton(WordClockEntity, ButtonEntity):
@@ -130,8 +135,11 @@ class WordClockSyncTimeButton(WordClockEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Send the current timestamp to the device."""
+        # Seconds resolution without microseconds keeps the string short enough
+        # for the parser on the ESP32.
+        timestamp = dt_util.now().replace(microsecond=0).isoformat(timespec="seconds")
         try:
-            await self.coordinator.api.async_set_time(dt_util.now().isoformat())
+            await self.coordinator.api.async_set_time(timestamp)
         except WordClockError as err:
             raise HomeAssistantError(
                 f"Could not set the time on the WordClock: {err}"

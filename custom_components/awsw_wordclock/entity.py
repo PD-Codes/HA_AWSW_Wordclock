@@ -4,11 +4,26 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
+from homeassistant.helpers.device_registry import (
+    CONNECTION_NETWORK_MAC,
+    DeviceInfo,
+    format_mac,
+)
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, MANUFACTURER, MODEL
 from .coordinator import WordClockCoordinator
+
+
+def device_key(coordinator: WordClockCoordinator) -> str:
+    """Return the stable identifier the entities are namespaced under.
+
+    The config entry unique id is the device MAC, which survives removing and
+    re-adding the integration. The entry id is only a fallback for a device
+    that did not report a MAC.
+    """
+    entry = coordinator.config_entry
+    return entry.unique_id or entry.entry_id
 
 
 class WordClockEntity(CoordinatorEntity[WordClockCoordinator]):
@@ -20,8 +35,7 @@ class WordClockEntity(CoordinatorEntity[WordClockCoordinator]):
         """Initialise the entity with a stable unique id."""
         super().__init__(coordinator)
         self._key = key
-        entry_id = coordinator.config_entry.entry_id
-        self._attr_unique_id = f"{entry_id}_{key}"
+        self._attr_unique_id = f"{device_key(coordinator)}_{key}"
 
     @property
     def _status(self) -> dict[str, Any]:
@@ -34,7 +48,7 @@ class WordClockEntity(CoordinatorEntity[WordClockCoordinator]):
         status = self._status
         host = self.coordinator.api.host
         info = DeviceInfo(
-            identifiers={(DOMAIN, self.coordinator.config_entry.entry_id)},
+            identifiers={(DOMAIN, device_key(self.coordinator))},
             manufacturer=MANUFACTURER,
             model=MODEL,
             name=status.get("hostname") or f"WordClock ({host})",
@@ -42,7 +56,7 @@ class WordClockEntity(CoordinatorEntity[WordClockCoordinator]):
             configuration_url=f"http://{host}/",
         )
         if mac := status.get("mac"):
-            info["connections"] = {(CONNECTION_NETWORK_MAC, mac)}
+            info["connections"] = {(CONNECTION_NETWORK_MAC, format_mac(mac))}
         return info
 
     @property

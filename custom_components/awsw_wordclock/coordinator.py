@@ -8,6 +8,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import WordClockApi, WordClockError
@@ -15,7 +16,6 @@ from .const import (
     DEFAULT_INTENSITY_LIMIT,
     DEFAULT_SCAN_INTERVAL_SECONDS,
     DOMAIN,
-    EXTRA_WORD_COUNT,
     KEY_EXTRA_WORDS,
     KEY_INTENSITY_LIMIT,
 )
@@ -55,27 +55,41 @@ class WordClockCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(str(err)) from err
 
     async def async_set(self, **values: Any) -> None:
-        """Write settings and refresh so every entity sees the new state."""
+        """Write settings and make the new state visible straight away."""
         try:
             await self.api.async_set(**values)
         except WordClockError as err:
-            raise UpdateFailed(str(err)) from err
+            raise HomeAssistantError(
+                f"WordClock did not accept the change: {err}"
+            ) from err
+
+        # Anything the optimistic map covers is applied without hitting the
+        # device again. Polling right here would bypass the refresh debouncer
+        # and could read back a value the clock has not applied yet.
+        optimistic = _as_status(values)
+        if self.data and len(optimistic) == len(values):
+            self.async_set_updated_data({**self.data, **optimistic})
+            return
+
+        if self.data and optimistic:
+            self.data.update(optimistic)
         await self.async_request_refresh()
 
-    async def async_action(self, command: str) -> None:
-        """Run a maintenance command and refresh afterwards."""
+    async def async_action(self, command: str, refresh: bool = True) -> None:
+        """Run a maintenance command, optionally refreshing afterwards."""
         try:
             await self.api.async_action(command)
         except WordClockError as err:
-            raise UpdateFailed(str(err)) from err
-        await self.async_request_refresh()
+            raise HomeAssistantError(f"WordClock rejected {command}: {err}") from err
+        if refresh:
+            await self.async_request_refresh()
 
     @property
     def intensity_limit(self) -> int:
         """Return the maximum brightness the firmware accepts."""
         limit = self.data.get(KEY_INTENSITY_LIMIT) if self.data else None
-        if isinstance(limit, int) and limit > 0:
-            return limit
+        if isinstance(limit, (int, float)) and limit > 0:
+            return int(limit)
         return DEFAULT_INTENSITY_LIMIT
 
     @property
@@ -93,7 +107,11 @@ class WordClockCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return word
         return None
 
-    @property
-    def known_extra_word_ids(self) -> set[int]:
-        """Return every extra word id the firmware could ever report."""
-        return set(range(1, EXTRA_WORD_COUNT + 1))
+
+def _as_status(values: dict[str, Any]) -> dict[str, Any]:
+    """Translate written values into their /api/status representation.
+
+    Only the flat keys are mapped; extra word writes are left to the next poll
+    because they live in a nested list.
+    """
+    return {key: value for key, value in values.items() if not key.startswith("ew")}

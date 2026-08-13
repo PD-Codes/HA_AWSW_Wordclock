@@ -47,13 +47,6 @@ BINARY_SENSORS: tuple[WordClockBinarySensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda status: bool(status.get("updateButtonActive")),
     ),
-    WordClockBinarySensorDescription(
-        key="night_mode_active",
-        translation_key="night_mode_active",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda status: str(status.get("nightStatus", "")).lower()
-        not in ("day time", "tagzeit", ""),
-    ),
 )
 
 

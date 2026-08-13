@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ipaddress
 import logging
+import re
 from typing import Any
 
 import voluptuous as vol
@@ -29,6 +30,8 @@ STEP_USER_SCHEMA = vol.Schema(
     }
 )
 
+HOSTNAME_LABEL = re.compile(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$", re.IGNORECASE)
+
 
 class WordClockConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for AWSW WordClock."""
@@ -43,33 +46,19 @@ class WordClockConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             host = user_input[CONF_HOST].strip()
+            status, errors = await self._async_probe(host)
 
-            if not _is_valid_host(host):
-                errors["base"] = "invalid_host"
-            else:
-                api = WordClockApi(host, async_get_clientsession(self.hass))
-                try:
-                    status = await api.async_get_status()
-                except WordClockConnectionError:
-                    errors["base"] = "cannot_connect"
-                except WordClockError:
-                    errors["base"] = "unknown_device"
-                except Exception:  # noqa: BLE001 - surfaced as a generic error
-                    _LOGGER.exception("Unexpected error probing WordClock at %s", host)
-                    errors["base"] = "unknown"
+            if status is not None:
+                if mac := status.get(KEY_MAC):
+                    await self.async_set_unique_id(format_mac(mac))
+                    self._abort_if_unique_id_configured(updates={CONF_HOST: host})
                 else:
-                    if mac := status.get(KEY_MAC):
-                        await self.async_set_unique_id(format_mac(mac))
-                        self._abort_if_unique_id_configured(
-                            updates={CONF_HOST: host}
-                        )
-                    else:
-                        self._async_abort_entries_match({CONF_HOST: host})
+                    self._async_abort_entries_match({CONF_HOST: host})
 
-                    title = status.get("hostname") or f"WordClock ({host})"
-                    return self.async_create_entry(
-                        title=title, data={CONF_HOST: host}
-                    )
+                return self.async_create_entry(
+                    title=status.get("hostname") or f"WordClock ({host})",
+                    data={CONF_HOST: host},
+                )
 
         return self.async_show_form(
             step_id="user",
@@ -88,40 +77,65 @@ class WordClockConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             host = user_input[CONF_HOST].strip()
-            if not _is_valid_host(host):
-                errors["base"] = "invalid_host"
-            else:
-                api = WordClockApi(host, async_get_clientsession(self.hass))
-                try:
-                    status = await api.async_get_status()
-                except WordClockConnectionError:
-                    errors["base"] = "cannot_connect"
-                except WordClockError:
-                    errors["base"] = "unknown_device"
-                else:
-                    if mac := status.get(KEY_MAC):
-                        await self.async_set_unique_id(format_mac(mac))
+            status, errors = await self._async_probe(host)
+
+            if status is not None:
+                unique_id = entry.unique_id
+                if mac := status.get(KEY_MAC):
+                    unique_id = format_mac(mac)
+                    await self.async_set_unique_id(unique_id)
+                    if entry.unique_id is not None:
                         self._abort_if_unique_id_mismatch(reason="wrong_device")
-                    return self.async_update_reload_and_abort(
-                        entry, data_updates={CONF_HOST: host}
-                    )
+                    else:
+                        # Entries created by version 1.x have no id yet, so make
+                        # sure no other entry has already claimed this device.
+                        self._abort_if_unique_id_configured()
+
+                return self.async_update_reload_and_abort(
+                    entry,
+                    unique_id=unique_id,
+                    data_updates={CONF_HOST: host},
+                )
 
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=self.add_suggested_values_to_schema(
-                STEP_USER_SCHEMA, {CONF_HOST: entry.data.get(CONF_HOST)}
+                STEP_USER_SCHEMA, user_input or {CONF_HOST: entry.data.get(CONF_HOST)}
             ),
             errors=errors,
         )
 
+    async def _async_probe(
+        self, host: str
+    ) -> tuple[dict[str, Any] | None, dict[str, str]]:
+        """Contact the device, returning its status or the error to show."""
+        if not _is_valid_host(host):
+            return None, {"base": "invalid_host"}
+
+        try:
+            api = WordClockApi(host, async_get_clientsession(self.hass))
+            status = await api.async_get_status()
+        except WordClockConnectionError:
+            return None, {"base": "cannot_connect"}
+        except WordClockError:
+            return None, {"base": "unknown_device"}
+        except Exception:  # noqa: BLE001 - surfaced as a generic error
+            _LOGGER.exception("Unexpected error probing WordClock at %s", host)
+            return None, {"base": "unknown"}
+
+        # A device that does not report these is not running firmware V5.
+        if "extraWords" not in status or "version" not in status:
+            return None, {"base": "unknown_device"}
+
+        return status, {}
+
 
 def _is_valid_host(host: str) -> bool:
     """Return whether the given string is a usable IP address or hostname."""
-    if not host:
+    if not host or len(host) > 253 or "://" in host or "/" in host:
         return False
     try:
         ipaddress.ip_address(host)
     except ValueError:
-        # Not an IP: accept it as a hostname if it looks sane.
-        return all(part and len(part) <= 63 for part in host.split("."))
+        return all(HOSTNAME_LABEL.match(label) for label in host.split("."))
     return True

@@ -5,7 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from homeassistant.components.light import ATTR_BRIGHTNESS, ATTR_RGB_COLOR, ColorMode, LightEntity
+from homeassistant.components.light import (
+    ATTR_BRIGHTNESS,
+    ATTR_RGB_COLOR,
+    ColorMode,
+    LightEntity,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -23,7 +28,7 @@ from .const import (
     extra_word_color_key,
 )
 from .coordinator import WordClockConfigEntry, WordClockCoordinator
-from .entity import WordClockEntity
+from .entity import WordClockEntity, device_key
 from .helpers import (
     apply_brightness,
     device_to_ha_brightness,
@@ -33,6 +38,8 @@ from .helpers import (
     split_color_brightness,
     strip_word_prefix,
 )
+
+EXTRA_WORD_PREFIX = "extra_word_"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -101,16 +108,20 @@ def _cleanup_stale_extra_words(
 ) -> None:
     """Remove extra word entities the device no longer reports.
 
-    Older firmware layouts, or a language change on the clock, can shrink the
-    number of extra words. Without this the registry keeps dead entities around.
+    A language change on the clock can shrink the number of extra words, which
+    would otherwise leave dead entities behind. If the device reported no words
+    at all the payload is treated as untrustworthy and nothing is removed.
     """
+    words = coordinator.extra_words
+    if not words:
+        return
+
     registry = er.async_get(hass)
-    valid = {
-        f"{entry.entry_id}_extra_word_{word['id']}" for word in coordinator.extra_words
-    }
+    prefix = f"{device_key(coordinator)}_{EXTRA_WORD_PREFIX}"
+    valid = {f"{prefix}{word['id']}" for word in words}
     for registry_entry in er.async_entries_for_config_entry(registry, entry.entry_id):
         unique_id = registry_entry.unique_id
-        if "_extra_word_" in unique_id and unique_id not in valid:
+        if unique_id.startswith(prefix) and unique_id not in valid:
             registry.async_remove(registry_entry.entity_id)
 
 
@@ -129,6 +140,8 @@ class WordClockPanelLight(WordClockEntity, LightEntity):
         super().__init__(coordinator, description.key)
         self._description = description
         self._attr_translation_key = description.translation_key
+        # Remembers the level to restore when the panel is switched back on.
+        self._last_on_brightness: int | None = None
 
     @property
     def is_on(self) -> bool:
@@ -150,28 +163,36 @@ class WordClockPanelLight(WordClockEntity, LightEntity):
     @property
     def _device_brightness(self) -> int:
         value = self._status.get(self._description.brightness_key)
-        return value if isinstance(value, int) else 0
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return 0
+        return int(value)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the panel on, optionally changing colour and brightness."""
         payload: dict[str, Any] = {}
+        limit = self.coordinator.intensity_limit
 
         if (rgb := kwargs.get(ATTR_RGB_COLOR)) is not None:
             payload[self._description.color_key] = rgb_to_hex(rgb)
 
         if (brightness := kwargs.get(ATTR_BRIGHTNESS)) is not None:
-            payload[self._description.brightness_key] = ha_to_device_brightness(
-                brightness, self.coordinator.intensity_limit
+            # Never round a positive request down to zero, which would read
+            # back as "off" while Home Assistant believes the light is on.
+            payload[self._description.brightness_key] = max(
+                1, ha_to_device_brightness(brightness, limit)
             )
         elif not self.is_on:
-            # No brightness given and currently off: fall back to full scale.
-            payload[self._description.brightness_key] = self.coordinator.intensity_limit
+            payload[self._description.brightness_key] = (
+                self._last_on_brightness or limit
+            )
 
         if payload:
             await self.coordinator.async_set(**payload)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the panel off by setting its brightness to zero."""
+        if (current := self._device_brightness) > 0:
+            self._last_on_brightness = current
         await self.coordinator.async_set(**{self._description.brightness_key: 0})
 
 
@@ -187,11 +208,11 @@ class WordClockExtraWordLight(WordClockEntity, LightEntity):
 
     def __init__(self, coordinator: WordClockCoordinator, word_id: int) -> None:
         """Initialise the extra word light."""
-        super().__init__(coordinator, f"extra_word_{word_id}")
+        super().__init__(coordinator, f"{EXTRA_WORD_PREFIX}{word_id}")
         self._word_id = word_id
 
     @property
-    def name(self) -> str | None:
+    def name(self) -> str:
         """Return the word as printed on the clock face."""
         word = self.coordinator.extra_word(self._word_id)
         if word and (raw := word.get("name")):
@@ -202,7 +223,7 @@ class WordClockExtraWordLight(WordClockEntity, LightEntity):
     def is_on(self) -> bool:
         """Return whether the word is currently lit."""
         word = self.coordinator.extra_word(self._word_id)
-        return bool(word and word.get("active"))
+        return bool(word and word.get("active")) and any(self._stored_rgb)
 
     @property
     def rgb_color(self) -> tuple[int, int, int]:
@@ -225,15 +246,20 @@ class WordClockExtraWordLight(WordClockEntity, LightEntity):
         """Light the word, optionally with a new colour or brightness."""
         current_color, current_brightness = split_color_brightness(self._stored_rgb)
 
-        color = kwargs.get(ATTR_RGB_COLOR, current_color)
+        if (requested := kwargs.get(ATTR_RGB_COLOR)) is not None:
+            # Normalise first: a caller may pass an already dimmed triplet, and
+            # scaling that again would make the colour decay on every call.
+            color, implied_brightness = split_color_brightness(requested)
+        else:
+            color, implied_brightness = current_color, None
+
         brightness = kwargs.get(ATTR_BRIGHTNESS)
         if brightness is None:
-            # Keep the previous brightness, but never restore "off".
-            brightness = current_brightness or 255
+            brightness = implied_brightness or current_brightness or 255
 
         payload = {
             extra_word_color_key(self._word_id): rgb_to_hex(
-                apply_brightness(color, brightness)
+                apply_brightness(color, max(1, brightness))
             ),
             extra_word_active_key(self._word_id): 1,
         }

@@ -109,9 +109,6 @@
       },
       "update_available": {
         "name": "Dostępna aktualizacja"
-      },
-      "night_mode_active": {
-        "name": "Tryb nocny aktywny"
       }
     },
     "button": {

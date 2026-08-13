@@ -109,9 +109,6 @@
       },
       "update_available": {
         "name": "Actualización disponible"
-      },
-      "night_mode_active": {
-        "name": "Modo noche activo"
       }
     },
     "button": {

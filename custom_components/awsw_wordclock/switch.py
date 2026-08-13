@@ -84,8 +84,8 @@ class WordClockSwitch(WordClockEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Enable the option."""
-        await self.coordinator.async_set(**{self.entity_description.key: 1})
+        await self.coordinator.async_set(**{self.entity_description.key: True})
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Disable the option."""
-        await self.coordinator.async_set(**{self.entity_description.key: 0})
+        await self.coordinator.async_set(**{self.entity_description.key: False})

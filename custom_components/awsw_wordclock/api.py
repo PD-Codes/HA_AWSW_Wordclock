@@ -38,7 +38,9 @@ class WordClockApi:
         """Initialise the client for a device reachable at ``host``."""
         self._host = host
         self._session = session
-        self._base = URL(f"http://{host}/api/")
+        # A bare IPv6 literal has to be bracketed before it can go into a URL.
+        authority = f"[{host}]" if ":" in host and not host.startswith("[") else host
+        self._base = URL(f"http://{authority}/api/")
 
     @property
     def host(self) -> str:
@@ -78,13 +80,6 @@ class WordClockApi:
             raise WordClockResponseError("Unexpected payload from /api/status")
         return data
 
-    async def async_get_preview(self) -> dict[str, Any]:
-        """Return the live matrix preview from ``/api/preview``."""
-        data = await self._request("preview")
-        if not isinstance(data, dict):
-            raise WordClockResponseError("Unexpected payload from /api/preview")
-        return data
-
     async def async_set(self, **values: Any) -> dict[str, Any]:
         """Write one or more settings via ``/api/set``.
 
@@ -102,7 +97,9 @@ class WordClockApi:
         result = await self._request("action", {"cmd": command})
         return self._check_result(result, f"action {command}")
 
-    async def async_send_ticker(self, text: str, color: str | None = None) -> dict[str, Any]:
+    async def async_send_ticker(
+        self, text: str, color: str | None = None
+    ) -> dict[str, Any]:
         """Show ``text`` as scrolling text on the clock."""
         params: dict[str, Any] = {"text": text}
         if color:

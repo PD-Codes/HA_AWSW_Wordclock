@@ -38,7 +38,9 @@ def split_color_brightness(
     if peak == 0:
         return (255, 255, 255), 0
     scale = MAX_HA_BRIGHTNESS / peak
-    normalised = tuple(min(255, round(channel * scale)) for channel in rgb)
+    normalised = tuple(
+        min(255, round(channel * scale)) for channel in rgb
+    )
     return normalised, peak  # type: ignore[return-value]
 
 
@@ -47,7 +49,8 @@ def apply_brightness(
 ) -> tuple[int, int, int]:
     """Scale a full-intensity colour down to the requested brightness."""
     factor = max(0, min(MAX_HA_BRIGHTNESS, brightness)) / MAX_HA_BRIGHTNESS
-    return tuple(round(channel * factor) for channel in rgb)  # type: ignore[return-value]
+    scaled = tuple(round(channel * factor) for channel in rgb)
+    return scaled  # type: ignore[return-value]
 
 
 def device_to_ha_brightness(value: int, limit: int) -> int:
