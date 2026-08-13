@@ -1,0 +1,149 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Podaj adres swojego WordClock. Słowa, kolory i ustawienia są odczytywane z urządzenia.",
+        "data": {
+          "host": "Adres IP lub nazwa hosta"
+        }
+      },
+      "reconfigure": {
+        "description": "Zaktualizuj adres swojego WordClock.",
+        "data": {
+          "host": "Adres IP lub nazwa hosta"
+        }
+      }
+    },
+    "error": {
+      "invalid_host": "To nie jest prawidłowy adres IP ani nazwa hosta.",
+      "cannot_connect": "Nie można połączyć się z WordClock pod tym adresem.",
+      "unknown_device": "Coś odpowiada, ale nie wygląda to na WordClock z firmware V5 lub nowszym.",
+      "unknown": "Nieoczekiwany błąd. Szczegóły w dzienniku Home Assistant."
+    },
+    "abort": {
+      "already_configured": "Ten WordClock jest już skonfigurowany.",
+      "reconfigure_successful": "Adres został zaktualizowany.",
+      "wrong_device": "Ten adres należy do innego WordClock.",
+      "unique_id_mismatch": "Ten adres należy do innego WordClock."
+    }
+  },
+  "entity": {
+    "light": {
+      "time_day": {
+        "name": "Czas"
+      },
+      "time_night": {
+        "name": "Czas (noc)"
+      },
+      "background_day": {
+        "name": "Tło"
+      },
+      "background_night": {
+        "name": "Tło (noc)"
+      }
+    },
+    "switch": {
+      "night_mode": {
+        "name": "Tryb nocny"
+      },
+      "single_minutes": {
+        "name": "Pokaż pojedyncze minuty"
+      },
+      "smooth_transition": {
+        "name": "Płynne przejście"
+      },
+      "digital_hour_chime": {
+        "name": "Cyfrowy czas o pełnej godzinie"
+      },
+      "random_day_colors": {
+        "name": "Losowe kolory dnia"
+      },
+      "startup_animation": {
+        "name": "Tekst startowy"
+      },
+      "show_ip": {
+        "name": "Pokaż IP przy starcie"
+      }
+    },
+    "sensor": {
+      "rssi": {
+        "name": "Sygnał Wi-Fi"
+      },
+      "ssid": {
+        "name": "Sieć Wi-Fi"
+      },
+      "ip": {
+        "name": "Adres IP"
+      },
+      "version": {
+        "name": "Wersja firmware"
+      },
+      "available_version": {
+        "name": "Dostępna wersja"
+      },
+      "device_time": {
+        "name": "Czas urządzenia"
+      },
+      "night_status": {
+        "name": "Status dzień/noc"
+      },
+      "ntp_status": {
+        "name": "Status NTP"
+      },
+      "time_server": {
+        "name": "Serwer czasu"
+      },
+      "language_name": {
+        "name": "Język zegara"
+      },
+      "intensity": {
+        "name": "Aktualna jasność"
+      }
+    },
+    "binary_sensor": {
+      "ntp_ok": {
+        "name": "Czas zsynchronizowany"
+      },
+      "online_mode": {
+        "name": "Tryb online"
+      },
+      "update_available": {
+        "name": "Dostępna aktualizacja"
+      },
+      "night_mode_active": {
+        "name": "Tryb nocny aktywny"
+      }
+    },
+    "button": {
+      "restart": {
+        "name": "Uruchom ponownie"
+      },
+      "test": {
+        "name": "Test LED"
+      },
+      "digital_time_test": {
+        "name": "Test cyfrowego czasu"
+      },
+      "word_reset": {
+        "name": "Resetuj wyświetlanie słów"
+      },
+      "reset_extra_words": {
+        "name": "Wyłącz wszystkie dodatkowe słowa"
+      },
+      "update_check": {
+        "name": "Sprawdź aktualizacje"
+      },
+      "wifi_optimize": {
+        "name": "Optymalizuj Wi-Fi"
+      },
+      "sync_time": {
+        "name": "Synchronizuj czas"
+      }
+    },
+    "notify": {
+      "ticker": {
+        "name": "Tekst przewijany"
+      }
+    }
+  }
+}

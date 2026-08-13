@@ -1,0 +1,90 @@
+"""Binary sensors for the AWSW WordClock."""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
+
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+    BinarySensorEntityDescription,
+)
+from homeassistant.const import EntityCategory
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+
+from .coordinator import WordClockConfigEntry, WordClockCoordinator
+from .entity import WordClockEntity
+
+
+@dataclass(frozen=True, kw_only=True)
+class WordClockBinarySensorDescription(BinarySensorEntityDescription):
+    """Binary sensor description with a value extractor."""
+
+    value_fn: Callable[[dict[str, Any]], bool] = lambda status: False
+
+
+BINARY_SENSORS: tuple[WordClockBinarySensorDescription, ...] = (
+    WordClockBinarySensorDescription(
+        key="ntp_ok",
+        translation_key="ntp_ok",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda status: bool(status.get("ntpOk")),
+    ),
+    WordClockBinarySensorDescription(
+        key="online_mode",
+        translation_key="online_mode",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda status: bool(status.get("onlineMode")),
+    ),
+    WordClockBinarySensorDescription(
+        key="update_available",
+        translation_key="update_available",
+        device_class=BinarySensorDeviceClass.UPDATE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda status: bool(status.get("updateButtonActive")),
+    ),
+    WordClockBinarySensorDescription(
+        key="night_mode_active",
+        translation_key="night_mode_active",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda status: str(status.get("nightStatus", "")).lower()
+        not in ("day time", "tagzeit", ""),
+    ),
+)
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: WordClockConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
+) -> None:
+    """Set up the WordClock binary sensors."""
+    coordinator = entry.runtime_data
+    async_add_entities(
+        WordClockBinarySensor(coordinator, description)
+        for description in BINARY_SENSORS
+    )
+
+
+class WordClockBinarySensor(WordClockEntity, BinarySensorEntity):
+    """A boolean state derived from /api/status."""
+
+    entity_description: WordClockBinarySensorDescription
+
+    def __init__(
+        self,
+        coordinator: WordClockCoordinator,
+        description: WordClockBinarySensorDescription,
+    ) -> None:
+        """Initialise the binary sensor."""
+        super().__init__(coordinator, description.key)
+        self.entity_description = description
+
+    @property
+    def is_on(self) -> bool:
+        """Return the current state."""
+        return self.entity_description.value_fn(self._status)

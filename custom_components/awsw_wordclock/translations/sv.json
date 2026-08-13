@@ -1,27 +1,149 @@
 {
-    "config": {
-        "step": {
-            "user": {
-                "description": "Ange IP-adressen till din WordClock-enhet.",
-                "data": {"ip_address": "IP-adress"}
-            },
-            "language": {
-                "description": "Välj språk för din WordClock.",
-                "data": {"language": "Språk"}
-            }
-        },
-        "error": {
-            "invalid_ip": "Ogiltig IP-adress.",
-            "ip_exists": "En enhet med denna IP-adress är redan konfigurerad."
-        },
-        "language": {
-            "german": "Tyska",
-            "english": "Engelska",
-            "dutch": "Nederländska",
-            "french": "Franska",
-            "italian": "Italienska",
-            "swedish": "Svenska",
-            "spanish": "Spanska"
+  "config": {
+    "step": {
+      "user": {
+        "description": "Ange adressen till din WordClock. Ord, färger och inställningar läses från enheten.",
+        "data": {
+          "host": "IP-adress eller värdnamn"
         }
+      },
+      "reconfigure": {
+        "description": "Uppdatera adressen till din WordClock.",
+        "data": {
+          "host": "IP-adress eller värdnamn"
+        }
+      }
+    },
+    "error": {
+      "invalid_host": "Det är ingen giltig IP-adress eller värdnamn.",
+      "cannot_connect": "Kunde inte nå WordClock på den adressen.",
+      "unknown_device": "Något svarar, men det verkar inte vara en WordClock med firmware V5 eller nyare.",
+      "unknown": "Oväntat fel. Se Home Assistant-loggen för detaljer."
+    },
+    "abort": {
+      "already_configured": "Den här WordClock är redan konfigurerad.",
+      "reconfigure_successful": "Adressen har uppdaterats.",
+      "wrong_device": "Adressen tillhör en annan WordClock.",
+      "unique_id_mismatch": "Adressen tillhör en annan WordClock."
     }
+  },
+  "entity": {
+    "light": {
+      "time_day": {
+        "name": "Tid"
+      },
+      "time_night": {
+        "name": "Tid (natt)"
+      },
+      "background_day": {
+        "name": "Bakgrund"
+      },
+      "background_night": {
+        "name": "Bakgrund (natt)"
+      }
+    },
+    "switch": {
+      "night_mode": {
+        "name": "Nattläge"
+      },
+      "single_minutes": {
+        "name": "Visa enstaka minuter"
+      },
+      "smooth_transition": {
+        "name": "Mjuk övergång"
+      },
+      "digital_hour_chime": {
+        "name": "Digital tid varje hel timme"
+      },
+      "random_day_colors": {
+        "name": "Slumpmässiga dagsfärger"
+      },
+      "startup_animation": {
+        "name": "Starttext"
+      },
+      "show_ip": {
+        "name": "Visa IP vid start"
+      }
+    },
+    "sensor": {
+      "rssi": {
+        "name": "Wi-Fi-signal"
+      },
+      "ssid": {
+        "name": "Wi-Fi-nätverk"
+      },
+      "ip": {
+        "name": "IP-adress"
+      },
+      "version": {
+        "name": "Firmwareversion"
+      },
+      "available_version": {
+        "name": "Tillgänglig version"
+      },
+      "device_time": {
+        "name": "Enhetens tid"
+      },
+      "night_status": {
+        "name": "Dag/natt-status"
+      },
+      "ntp_status": {
+        "name": "NTP-status"
+      },
+      "time_server": {
+        "name": "Tidsserver"
+      },
+      "language_name": {
+        "name": "Klockans språk"
+      },
+      "intensity": {
+        "name": "Aktuell ljusstyrka"
+      }
+    },
+    "binary_sensor": {
+      "ntp_ok": {
+        "name": "Tid synkroniserad"
+      },
+      "online_mode": {
+        "name": "Onlineläge"
+      },
+      "update_available": {
+        "name": "Uppdatering tillgänglig"
+      },
+      "night_mode_active": {
+        "name": "Nattläge aktivt"
+      }
+    },
+    "button": {
+      "restart": {
+        "name": "Starta om"
+      },
+      "test": {
+        "name": "LED-test"
+      },
+      "digital_time_test": {
+        "name": "Test av digital tid"
+      },
+      "word_reset": {
+        "name": "Återställ ordvisning"
+      },
+      "reset_extra_words": {
+        "name": "Släck alla extraord"
+      },
+      "update_check": {
+        "name": "Sök efter uppdateringar"
+      },
+      "wifi_optimize": {
+        "name": "Optimera Wi-Fi"
+      },
+      "sync_time": {
+        "name": "Synkronisera tid"
+      }
+    },
+    "notify": {
+      "ticker": {
+        "name": "Rullande text"
+      }
+    }
+  }
 }

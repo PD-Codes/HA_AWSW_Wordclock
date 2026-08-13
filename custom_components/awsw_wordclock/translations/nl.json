@@ -1,27 +1,149 @@
 {
-    "config": {
-        "step": {
-            "user": {
-                "description": "Voer het IP-adres van uw WordClock-apparaat in.",
-                "data": {"ip_address": "IP-adres"}
-            },
-            "language": {
-                "description": "Selecteer de taal voor uw WordClock.",
-                "data": {"language": "Taal"}
-            }
-        },
-        "error": {
-            "invalid_ip": "Ongeldig IP-adres.",
-            "ip_exists": "Een apparaat met dit IP-adres is al geconfigureerd."
-        },
-        "language": {
-            "german": "Duits",
-            "english": "Engels",
-            "dutch": "Nederlands",
-            "french": "Frans",
-            "italian": "Italiaans",
-            "swedish": "Zweeds",
-            "spanish": "Spaans"
+  "config": {
+    "step": {
+      "user": {
+        "description": "Voer het adres van je WordClock in. Woorden, kleuren en instellingen worden van het apparaat zelf gelezen.",
+        "data": {
+          "host": "IP-adres of hostnaam"
         }
+      },
+      "reconfigure": {
+        "description": "Werk het adres van je WordClock bij.",
+        "data": {
+          "host": "IP-adres of hostnaam"
+        }
+      }
+    },
+    "error": {
+      "invalid_host": "Dat is geen geldig IP-adres of hostnaam.",
+      "cannot_connect": "Kan de WordClock op dat adres niet bereiken.",
+      "unknown_device": "Er antwoordt iets, maar het lijkt geen WordClock met firmware V5 of nieuwer.",
+      "unknown": "Onverwachte fout. Bekijk het Home Assistant-logboek voor details."
+    },
+    "abort": {
+      "already_configured": "Deze WordClock is al geconfigureerd.",
+      "reconfigure_successful": "Het adres is bijgewerkt.",
+      "wrong_device": "Dat adres hoort bij een andere WordClock.",
+      "unique_id_mismatch": "Dat adres hoort bij een andere WordClock."
     }
+  },
+  "entity": {
+    "light": {
+      "time_day": {
+        "name": "Tijd"
+      },
+      "time_night": {
+        "name": "Tijd (nacht)"
+      },
+      "background_day": {
+        "name": "Achtergrond"
+      },
+      "background_night": {
+        "name": "Achtergrond (nacht)"
+      }
+    },
+    "switch": {
+      "night_mode": {
+        "name": "Nachtmodus"
+      },
+      "single_minutes": {
+        "name": "Losse minuten tonen"
+      },
+      "smooth_transition": {
+        "name": "Vloeiende overgang"
+      },
+      "digital_hour_chime": {
+        "name": "Digitale tijd op het hele uur"
+      },
+      "random_day_colors": {
+        "name": "Willekeurige dagkleuren"
+      },
+      "startup_animation": {
+        "name": "Opstarttekst"
+      },
+      "show_ip": {
+        "name": "IP tonen bij opstarten"
+      }
+    },
+    "sensor": {
+      "rssi": {
+        "name": "Wifi-signaal"
+      },
+      "ssid": {
+        "name": "Wifi-netwerk"
+      },
+      "ip": {
+        "name": "IP-adres"
+      },
+      "version": {
+        "name": "Firmwareversie"
+      },
+      "available_version": {
+        "name": "Beschikbare versie"
+      },
+      "device_time": {
+        "name": "Apparaattijd"
+      },
+      "night_status": {
+        "name": "Dag/nacht-status"
+      },
+      "ntp_status": {
+        "name": "NTP-status"
+      },
+      "time_server": {
+        "name": "Tijdserver"
+      },
+      "language_name": {
+        "name": "Taal van de klok"
+      },
+      "intensity": {
+        "name": "Huidige helderheid"
+      }
+    },
+    "binary_sensor": {
+      "ntp_ok": {
+        "name": "Tijd gesynchroniseerd"
+      },
+      "online_mode": {
+        "name": "Onlinemodus"
+      },
+      "update_available": {
+        "name": "Update beschikbaar"
+      },
+      "night_mode_active": {
+        "name": "Nachtmodus actief"
+      }
+    },
+    "button": {
+      "restart": {
+        "name": "Herstarten"
+      },
+      "test": {
+        "name": "Led-test"
+      },
+      "digital_time_test": {
+        "name": "Digitale tijd-test"
+      },
+      "word_reset": {
+        "name": "Woordweergave resetten"
+      },
+      "reset_extra_words": {
+        "name": "Alle extra woorden uit"
+      },
+      "update_check": {
+        "name": "Controleren op updates"
+      },
+      "wifi_optimize": {
+        "name": "Wifi optimaliseren"
+      },
+      "sync_time": {
+        "name": "Tijd synchroniseren"
+      }
+    },
+    "notify": {
+      "ticker": {
+        "name": "Lopende tekst"
+      }
+    }
+  }
 }

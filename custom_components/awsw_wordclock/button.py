@@ -1,0 +1,139 @@
+"""Buttons exposing the AWSW WordClock maintenance actions."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from homeassistant.components.button import (
+    ButtonDeviceClass,
+    ButtonEntity,
+    ButtonEntityDescription,
+)
+from homeassistant.const import EntityCategory
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
+
+from .api import WordClockError
+from .const import (
+    ACTION_DIGITAL_TIME_TEST,
+    ACTION_RESET_EXTRA_WORDS,
+    ACTION_RESTART,
+    ACTION_TEST,
+    ACTION_UPDATE_CHECK,
+    ACTION_WIFI_OPTIMIZE,
+    ACTION_WORD_RESET,
+)
+from .coordinator import WordClockConfigEntry, WordClockCoordinator
+from .entity import WordClockEntity
+
+SYNC_TIME_KEY = "sync_time"
+
+
+@dataclass(frozen=True, kw_only=True)
+class WordClockButtonDescription(ButtonEntityDescription):
+    """Button description carrying the firmware command to run."""
+
+    command: str
+
+
+BUTTONS: tuple[WordClockButtonDescription, ...] = (
+    WordClockButtonDescription(
+        key="restart",
+        translation_key="restart",
+        device_class=ButtonDeviceClass.RESTART,
+        entity_category=EntityCategory.CONFIG,
+        command=ACTION_RESTART,
+    ),
+    WordClockButtonDescription(
+        key="test",
+        translation_key="test",
+        entity_category=EntityCategory.CONFIG,
+        command=ACTION_TEST,
+    ),
+    WordClockButtonDescription(
+        key="digital_time_test",
+        translation_key="digital_time_test",
+        entity_category=EntityCategory.CONFIG,
+        command=ACTION_DIGITAL_TIME_TEST,
+    ),
+    WordClockButtonDescription(
+        key="word_reset",
+        translation_key="word_reset",
+        entity_category=EntityCategory.CONFIG,
+        command=ACTION_WORD_RESET,
+    ),
+    WordClockButtonDescription(
+        key="reset_extra_words",
+        translation_key="reset_extra_words",
+        entity_category=EntityCategory.CONFIG,
+        command=ACTION_RESET_EXTRA_WORDS,
+    ),
+    WordClockButtonDescription(
+        key="update_check",
+        translation_key="update_check",
+        entity_category=EntityCategory.CONFIG,
+        command=ACTION_UPDATE_CHECK,
+    ),
+    WordClockButtonDescription(
+        key="wifi_optimize",
+        translation_key="wifi_optimize",
+        entity_category=EntityCategory.CONFIG,
+        command=ACTION_WIFI_OPTIMIZE,
+    ),
+)
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: WordClockConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
+) -> None:
+    """Set up the WordClock buttons."""
+    coordinator = entry.runtime_data
+    entities: list[ButtonEntity] = [
+        WordClockActionButton(coordinator, description) for description in BUTTONS
+    ]
+    entities.append(WordClockSyncTimeButton(coordinator))
+    async_add_entities(entities)
+
+
+class WordClockActionButton(WordClockEntity, ButtonEntity):
+    """Runs a single /api/action command."""
+
+    entity_description: WordClockButtonDescription
+
+    def __init__(
+        self,
+        coordinator: WordClockCoordinator,
+        description: WordClockButtonDescription,
+    ) -> None:
+        """Initialise the button."""
+        super().__init__(coordinator, description.key)
+        self.entity_description = description
+
+    async def async_press(self) -> None:
+        """Run the command."""
+        await self.coordinator.async_action(self.entity_description.command)
+
+
+class WordClockSyncTimeButton(WordClockEntity, ButtonEntity):
+    """Pushes Home Assistant's current time to the clock."""
+
+    _attr_translation_key = SYNC_TIME_KEY
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, coordinator: WordClockCoordinator) -> None:
+        """Initialise the button."""
+        super().__init__(coordinator, SYNC_TIME_KEY)
+
+    async def async_press(self) -> None:
+        """Send the current timestamp to the device."""
+        try:
+            await self.coordinator.api.async_set_time(dt_util.now().isoformat())
+        except WordClockError as err:
+            raise HomeAssistantError(
+                f"Could not set the time on the WordClock: {err}"
+            ) from err
+        await self.coordinator.async_request_refresh()

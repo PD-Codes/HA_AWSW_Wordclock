@@ -1,38 +1,87 @@
-"""AWSW WordClock integration."""
-from homeassistant.config_entries import ConfigEntry
+"""The AWSW WordClock integration."""
+
+from __future__ import annotations
+
+import logging
+
 from homeassistant.core import HomeAssistant
-from aiohttp import ClientSession
-from .const import DOMAIN
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+from .api import WordClockApi
+from .const import (
+    CONF_HOST,
+    DOMAIN,
+    KEY_MAC,
+    LEGACY_CONF_IP_ADDRESS,
+    LEGACY_CONF_LANGUAGE,
+    PLATFORMS,
+)
+from .coordinator import WordClockConfigEntry, WordClockCoordinator
+
+_LOGGER = logging.getLogger(__name__)
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: WordClockConfigEntry) -> bool:
     """Set up AWSW WordClock from a config entry."""
-    hass.data.setdefault(DOMAIN, {})
-    if entry.entry_id not in hass.data[DOMAIN]:
-        hass.data[DOMAIN][entry.entry_id] = {
-            "config_entry": entry,
-            "session": ClientSession(),
-        }
+    api = WordClockApi(entry.data[CONF_HOST], async_get_clientsession(hass))
+    coordinator = WordClockCoordinator(hass, entry, api)
+    await coordinator.async_config_entry_first_refresh()
 
-    # Register options update listener
-    entry.add_update_listener(update_options)
+    # Adopt the MAC as the entry unique id the first time we see it, so that a
+    # device that changed its IP can still be recognised.
+    if entry.unique_id is None and (mac := coordinator.data.get(KEY_MAC)):
+        hass.config_entries.async_update_entry(entry, unique_id=_format_mac(mac))
 
-    await hass.config_entries.async_forward_entry_setups(entry, ["switch"])
+    entry.runtime_data = coordinator
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+
+async def async_unload_entry(hass: HomeAssistant, entry: WordClockConfigEntry) -> bool:
     """Unload a config entry."""
-    if entry.entry_id in hass.data[DOMAIN]:
-        session = hass.data[DOMAIN][entry.entry_id].get("session")
-        if session:
-            await session.close()
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
-        unload_ok = await hass.config_entries.async_unload_platforms(entry, ["switch"])
-        if unload_ok:
-            hass.data[DOMAIN].pop(entry.entry_id)
-        return unload_ok
-    return False
 
-async def update_options(hass: HomeAssistant, config_entry: ConfigEntry):
-    """Handle options updates dynamically."""
-    hass.data[DOMAIN][config_entry.entry_id]["config_entry"] = config_entry
-    await hass.config_entries.async_reload(config_entry.entry_id)
+async def async_migrate_entry(hass: HomeAssistant, entry: WordClockConfigEntry) -> bool:
+    """Migrate an old config entry to the current layout.
+
+    Version 1 stored the device address under ``ip_address`` and a manually
+    chosen ``language``. Both are obsolete: the address key was renamed and the
+    firmware now reports the extra words, including their names, itself.
+    """
+    if entry.version > 2:
+        # Downgrades are not supported.
+        return False
+
+    if entry.version == 1:
+        data = {**entry.data}
+        options = {**entry.options}
+
+        host = data.pop(LEGACY_CONF_IP_ADDRESS, None) or data.get(CONF_HOST)
+        if not host:
+            _LOGGER.error("Cannot migrate WordClock entry without an address")
+            return False
+        data[CONF_HOST] = host
+        data.pop(LEGACY_CONF_LANGUAGE, None)
+        options.pop(LEGACY_CONF_LANGUAGE, None)
+
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, version=2
+        )
+        _LOGGER.debug("Migrated WordClock config entry to version 2")
+
+    return True
+
+
+async def _async_update_listener(
+    hass: HomeAssistant, entry: WordClockConfigEntry
+) -> None:
+    """Reload the entry when its options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
+
+
+def _format_mac(mac: str) -> str:
+    """Return a MAC address in the lowercase colon-separated form HA uses."""
+    return mac.replace("-", ":").lower()

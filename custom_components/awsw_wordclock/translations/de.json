@@ -1,27 +1,149 @@
 {
-    "config": {
-        "step": {
-            "user": {
-                "description": "Geben Sie die IP-Adresse Ihres WordClock-Geräts ein.",
-                "data": {"ip_address": "IP-Adresse"}
-            },
-            "language": {
-                "description": "Wählen Sie die Sprache für Ihre WordClock aus.",
-                "data": {"language": "Sprache"}
-            }
-        },
-        "error": {
-            "invalid_ip": "Ungültige IP-Adresse.",
-            "ip_exists": "Ein Gerät mit dieser IP-Adresse ist bereits konfiguriert."
-        },
-        "language": {
-            "german": "Deutsch",
-            "english": "Englisch",
-            "dutch": "Niederländisch",
-            "french": "Französisch",
-            "italian": "Italienisch",
-            "swedish": "Schwedisch",
-            "spanish": "Spanisch"
+  "config": {
+    "step": {
+      "user": {
+        "description": "Gib die Adresse deiner WordClock ein. Wörter, Farben und Einstellungen werden direkt vom Gerät gelesen.",
+        "data": {
+          "host": "IP-Adresse oder Hostname"
         }
+      },
+      "reconfigure": {
+        "description": "Adresse deiner WordClock aktualisieren.",
+        "data": {
+          "host": "IP-Adresse oder Hostname"
+        }
+      }
+    },
+    "error": {
+      "invalid_host": "Das ist keine gültige IP-Adresse und kein gültiger Hostname.",
+      "cannot_connect": "Die WordClock ist unter dieser Adresse nicht erreichbar.",
+      "unknown_device": "Da antwortet etwas, aber es sieht nicht nach einer WordClock mit Firmware V5 oder neuer aus.",
+      "unknown": "Unerwarteter Fehler. Details stehen im Home-Assistant-Log."
+    },
+    "abort": {
+      "already_configured": "Diese WordClock ist bereits eingerichtet.",
+      "reconfigure_successful": "Die Adresse wurde aktualisiert.",
+      "wrong_device": "Diese Adresse gehört zu einer anderen WordClock.",
+      "unique_id_mismatch": "Diese Adresse gehört zu einer anderen WordClock."
     }
+  },
+  "entity": {
+    "light": {
+      "time_day": {
+        "name": "Zeit"
+      },
+      "time_night": {
+        "name": "Zeit (Nacht)"
+      },
+      "background_day": {
+        "name": "Hintergrund"
+      },
+      "background_night": {
+        "name": "Hintergrund (Nacht)"
+      }
+    },
+    "switch": {
+      "night_mode": {
+        "name": "Nachtmodus"
+      },
+      "single_minutes": {
+        "name": "Einzelminuten anzeigen"
+      },
+      "smooth_transition": {
+        "name": "Sanfter Übergang"
+      },
+      "digital_hour_chime": {
+        "name": "Digitale Zeit zur vollen Stunde"
+      },
+      "random_day_colors": {
+        "name": "Zufällige Tagesfarben"
+      },
+      "startup_animation": {
+        "name": "Starttext"
+      },
+      "show_ip": {
+        "name": "IP beim Start anzeigen"
+      }
+    },
+    "sensor": {
+      "rssi": {
+        "name": "WLAN-Signal"
+      },
+      "ssid": {
+        "name": "WLAN-Netzwerk"
+      },
+      "ip": {
+        "name": "IP-Adresse"
+      },
+      "version": {
+        "name": "Firmware-Version"
+      },
+      "available_version": {
+        "name": "Verfügbare Version"
+      },
+      "device_time": {
+        "name": "Gerätezeit"
+      },
+      "night_status": {
+        "name": "Tag-/Nacht-Status"
+      },
+      "ntp_status": {
+        "name": "NTP-Status"
+      },
+      "time_server": {
+        "name": "Zeitserver"
+      },
+      "language_name": {
+        "name": "Sprache der Uhr"
+      },
+      "intensity": {
+        "name": "Aktuelle Helligkeit"
+      }
+    },
+    "binary_sensor": {
+      "ntp_ok": {
+        "name": "Zeit synchronisiert"
+      },
+      "online_mode": {
+        "name": "Online-Modus"
+      },
+      "update_available": {
+        "name": "Update verfügbar"
+      },
+      "night_mode_active": {
+        "name": "Nachtmodus aktiv"
+      }
+    },
+    "button": {
+      "restart": {
+        "name": "Neustart"
+      },
+      "test": {
+        "name": "LED-Test"
+      },
+      "digital_time_test": {
+        "name": "Digitalzeit-Test"
+      },
+      "word_reset": {
+        "name": "Wortanzeige zurücksetzen"
+      },
+      "reset_extra_words": {
+        "name": "Alle Extra-Wörter aus"
+      },
+      "update_check": {
+        "name": "Nach Updates suchen"
+      },
+      "wifi_optimize": {
+        "name": "WLAN optimieren"
+      },
+      "sync_time": {
+        "name": "Zeit synchronisieren"
+      }
+    },
+    "notify": {
+      "ticker": {
+        "name": "Lauftext"
+      }
+    }
+  }
 }
