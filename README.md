@@ -146,7 +146,6 @@ in `/api/status`). It speaks the same `/api/` interface, with these differences:
 - Additional actions: `calibrate`, `chase`, `wordCycle`, `allOn`, `stop`, `wifiReset`.
   `ew<N>=toggle` toggles a word.
 
-custom firmware comming soon
 
 ## Troubleshooting
 
