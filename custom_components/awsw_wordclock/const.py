@@ -26,6 +26,8 @@ LEGACY_CONF_IP_ADDRESS: Final = "ip_address"
 LEGACY_CONF_LANGUAGE: Final = "language"
 
 DEFAULT_SCAN_INTERVAL_SECONDS: Final = 30
+# The custom firmware answers /api/status in a few milliseconds, so poll it faster.
+FAST_SCAN_INTERVAL_SECONDS: Final = 5
 REQUEST_TIMEOUT_SECONDS: Final = 10
 
 # The firmware caps every brightness slider at this value; it is read from

@@ -1,13 +1,13 @@
 {
   "domain": "awsw_wordclock",
   "name": "AWSW WordClock",
-  "codeowners": ["@bluenazgul"],
+  "codeowners": ["@PD-Codes"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/bluenazgul/HA_AWSW_Wordclock",
+  "documentation": "https://github.com/PD-Codes/HA_AWSW_Wordclock",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/bluenazgul/HA_AWSW_Wordclock/issues",
+  "issue_tracker": "https://github.com/PD-Codes/HA_AWSW_Wordclock/issues",
   "requirements": [],
-  "version": "2.1.0"
+  "version": "1.0.0"
 }

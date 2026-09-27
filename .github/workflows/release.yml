@@ -1,0 +1,40 @@
+# Creates a GitHub release whenever the version in manifest.json changes.
+# HACS picks up new releases and offers them as an update in Home Assistant.
+# Workflow: bump "version" in manifest.json -> commit -> push to main. Done.
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - custom_components/awsw_wordclock/manifest.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from manifest
+        id: version
+        run: echo "value=$(jq -r .version custom_components/awsw_wordclock/manifest.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Create release if the tag does not exist yet
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          if git rev-parse "refs/tags/${VERSION}" >/dev/null 2>&1; then
+            echo "Release ${VERSION} already exists - nothing to do."
+            exit 0
+          fi
+          gh release create "${VERSION}" \
+            --target "${GITHUB_SHA}" \
+            --title "${VERSION}" \
+            --generate-notes

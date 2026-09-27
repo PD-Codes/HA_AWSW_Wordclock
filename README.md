@@ -155,7 +155,15 @@ custom firmware comming soon
 - If entities go unavailable, the clock could not be reached for a poll; check that its IP
   has not changed and use **Reconfigure** if it has.
 
+## Releasing
+
+Bump `version` in `custom_components/awsw_wordclock/manifest.json`, commit and push to `main`.
+The `Release` workflow creates the matching GitHub release automatically, and HACS then offers
+the update in Home Assistant.
+
 ## Credits
+
+Based on [HA_AWSW_Wordclock](https://github.com/bluenazgul/HA_AWSW_Wordclock) by [@bluenazgul](https://github.com/bluenazgul).
 
 Created for the [AWSW WordClock](https://www.printables.com/model/768062-wordclock-16x16-2024/)
 community.

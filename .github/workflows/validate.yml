@@ -1,0 +1,22 @@
+# Checks the integration with the official HACS and hassfest validators.
+name: Validate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hacs/action@main
+        with:
+          category: integration
+          ignore: brands
+
+  hassfest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: home-assistant/actions/hassfest@master

@@ -16,8 +16,10 @@ from .const import (
     DEFAULT_INTENSITY_LIMIT,
     DEFAULT_SCAN_INTERVAL_SECONDS,
     DOMAIN,
+    FAST_SCAN_INTERVAL_SECONDS,
     KEY_EXTRA_WORDS,
     KEY_INTENSITY_LIMIT,
+    is_custom_firmware,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -50,9 +52,19 @@ class WordClockCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch the current device state."""
         try:
-            return await self.api.async_get_status()
+            status = await self.api.async_get_status()
         except WordClockError as err:
             raise UpdateFailed(str(err)) from err
+
+        # Pick the poll rate by firmware; re-evaluated on every poll so a firmware
+        # change is picked up without reloading the integration.
+        seconds = (
+            FAST_SCAN_INTERVAL_SECONDS
+            if is_custom_firmware(status)
+            else DEFAULT_SCAN_INTERVAL_SECONDS
+        )
+        self.update_interval = timedelta(seconds=seconds)
+        return status
 
     async def async_set(self, **values: Any) -> None:
         """Write settings and make the new state visible straight away."""
@@ -67,7 +79,13 @@ class WordClockCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # device again. Polling right here would bypass the refresh debouncer
         # and could read back a value the clock has not applied yet.
         optimistic = _as_status(values)
-        if self.data and len(optimistic) == len(values):
+        mapped = len(optimistic)
+        if self.data and len(optimistic) < len(values):
+            words, complete = _apply_extra_words(self.extra_words, values)
+            optimistic[KEY_EXTRA_WORDS] = words
+            if complete:
+                mapped = len(values)
+        if self.data and mapped == len(values):
             self.async_set_updated_data({**self.data, **optimistic})
             return
 
@@ -111,7 +129,37 @@ class WordClockCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 def _as_status(values: dict[str, Any]) -> dict[str, Any]:
     """Translate written values into their /api/status representation.
 
-    Only the flat keys are mapped; extra word writes are left to the next poll
-    because they live in a nested list.
+    Only the flat keys are mapped; extra word writes are handled by
+    ``async_set`` because they live in a nested list.
     """
     return {key: value for key, value in values.items() if not key.startswith("ew")}
+
+
+def _apply_extra_words(
+    words: list[dict[str, Any]], values: dict[str, Any]
+) -> tuple[list[dict[str, Any]], bool]:
+    """Apply ``ew<N>`` / ``ewColor<N>`` writes to a copy of the extra word list.
+
+    Returns the new list and whether every extra word write could be mapped.
+    """
+    by_id = {word.get("id"): dict(word) for word in words}
+    complete = True
+    for key, value in values.items():
+        if not key.startswith("ew"):
+            continue
+        if key.startswith("ewColor"):
+            word_id, field, new = key[7:], "color", value
+        elif key.startswith("ew") and str(value) in ("0", "1", "True", "False"):
+            word_id, field, new = key[2:], "active", str(value) in ("1", "True")
+        else:
+            complete = False
+            continue
+        try:
+            word = by_id.get(int(word_id))
+        except ValueError:
+            word = None
+        if word is None:
+            complete = False
+            continue
+        word[field] = new
+    return [by_id.get(word.get("id"), word) for word in words], complete
