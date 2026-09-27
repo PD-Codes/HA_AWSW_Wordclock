@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .coordinator import WordClockConfigEntry, WordClockCoordinator
-from .entity import WordClockEntity
+from .entity import WordClockEntity, async_remove_unsupported
 
 SWITCHES: tuple[SwitchEntityDescription, ...] = (
     SwitchEntityDescription(
@@ -21,6 +21,11 @@ SWITCHES: tuple[SwitchEntityDescription, ...] = (
     SwitchEntityDescription(
         key="singleMinutes",
         translation_key="single_minutes",
+        entity_category=EntityCategory.CONFIG,
+    ),
+    SwitchEntityDescription(
+        key="showItIs",
+        translation_key="show_it_is",
         entity_category=EntityCategory.CONFIG,
     ),
     SwitchEntityDescription(
@@ -58,8 +63,14 @@ async def async_setup_entry(
 ) -> None:
     """Set up the WordClock configuration switches."""
     coordinator = entry.runtime_data
+    status = coordinator.data or {}
+    # Only offer options the firmware actually reports (showItIs is custom firmware only)
+    supported = [d for d in SWITCHES if d.key in status]
+    async_remove_unsupported(
+        hass, coordinator, "switch", (d.key for d in SWITCHES if d not in supported)
+    )
     async_add_entities(
-        WordClockSwitch(coordinator, description) for description in SWITCHES
+        WordClockSwitch(coordinator, description) for description in supported
     )
 
 

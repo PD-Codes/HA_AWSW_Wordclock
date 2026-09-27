@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Any
 
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import (
     CONNECTION_NETWORK_MAC,
     DeviceInfo,
@@ -24,6 +27,25 @@ def device_key(coordinator: WordClockCoordinator) -> str:
     """
     entry = coordinator.config_entry
     return entry.unique_id or entry.entry_id
+
+
+@callback
+def async_remove_unsupported(
+    hass: HomeAssistant,
+    coordinator: WordClockCoordinator,
+    domain: str,
+    keys: Iterable[str],
+) -> None:
+    """Remove entities the connected firmware does not provide.
+
+    The original AWSW firmware and the custom firmware expose slightly different
+    features. Without this, switching firmware would leave orphaned entities behind.
+    """
+    registry = er.async_get(hass)
+    prefix = device_key(coordinator)
+    for key in keys:
+        if entity_id := registry.async_get_entity_id(domain, DOMAIN, f"{prefix}_{key}"):
+            registry.async_remove(entity_id)
 
 
 class WordClockEntity(CoordinatorEntity[WordClockCoordinator]):

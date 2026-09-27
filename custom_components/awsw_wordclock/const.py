@@ -35,6 +35,7 @@ DEFAULT_INTENSITY_LIMIT: Final = 50
 # --- /api/status keys -------------------------------------------------------
 
 KEY_EXTRA_WORDS: Final = "extraWords"
+KEY_FIRMWARE: Final = "firmware"
 KEY_INTENSITY_LIMIT: Final = "intensityLimit"
 KEY_MAC: Final = "mac"
 
@@ -60,6 +61,16 @@ ACTION_WORD_RESET: Final = "wordReset"
 ACTION_RESET_EXTRA_WORDS: Final = "resetExtraWords"
 ACTION_UPDATE_CHECK: Final = "updateCheck"
 ACTION_WIFI_OPTIMIZE: Final = "wifiOptimize"
+
+
+# Value of KEY_FIRMWARE reported by the custom WordClock firmware (V6+). The original
+# AWSW firmware does not report this key.
+FIRMWARE_CUSTOM: Final = "WordClock Custom"
+
+
+def is_custom_firmware(status: dict) -> bool:
+    """Return True if the clock runs the custom WordClock firmware."""
+    return status.get(KEY_FIRMWARE) == FIRMWARE_CUSTOM
 
 
 def extra_word_active_key(word_id: int) -> str:

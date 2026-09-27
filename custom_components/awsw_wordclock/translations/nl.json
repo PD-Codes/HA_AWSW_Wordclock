@@ -49,6 +49,9 @@
       "single_minutes": {
         "name": "Losse minuten tonen"
       },
+      "show_it_is": {
+        "name": "\"ES IST\" tonen"
+      },
       "smooth_transition": {
         "name": "Vloeiende overgang"
       },

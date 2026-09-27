@@ -64,7 +64,7 @@ An optional `title` is prepended to the message, since the clock renders one lin
 
 ### Switches (configuration)
 
-Night mode, single minutes, smooth transition, digital time on the hour, random daily colours,
+Night mode, single minutes, show "ES IST" (custom firmware), smooth transition, digital time on the hour, random daily colours,
 startup text, show IP on startup.
 
 ### Buttons
@@ -129,6 +129,24 @@ Kept by the firmware for existing smart home setups; not used by this integratio
 | `GET /intensity` | Current brightness. |
 | `GET /?text=<text>` | Scrolling text. |
 | `GET /resetew1`, `/resetew0`, `/resetewstatus` | Bulk extra word control. |
+
+## Custom firmware (V6)
+
+The integration also works with the custom WordClock firmware (reports `"firmware": "WordClock Custom"`
+in `/api/status`). It speaks the same `/api/` interface, with these differences:
+
+- **27 extra words** instead of 12. Ids 1–12 are identical to the original firmware, so existing
+  entities and automations keep working. New words: `13 OK`, `14 WLAN`, `15 UPDATE`, `16 DOWNLOAD`,
+  `17 NEUSTART`, `18 WORDCLOCK`, `19 GENAU`, `20 ZEIT`, plus the single parts of the combined words
+  (`21 MUELL`, `22 RAUS`, `23 BRINGEN`, `24 GELBER`, `25 SACK`, `26 ZUM`, `27 ZOCKEN`).
+  Reload the integration once after flashing so the new word lights are created.
+- Extra switch **Show "ES IST"** (`showItIs`).
+- No online update check and no Wi-Fi optimisation – those buttons and the update sensors are
+  removed automatically when the custom firmware is detected.
+- Additional actions: `calibrate`, `chase`, `wordCycle`, `allOn`, `stop`, `wifiReset`.
+  `ew<N>=toggle` toggles a word.
+
+custom firmware comming soon
 
 ## Troubleshooting
 

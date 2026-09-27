@@ -16,7 +16,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .coordinator import WordClockConfigEntry, WordClockCoordinator
-from .entity import WordClockEntity
+from .entity import WordClockEntity, async_remove_unsupported
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -24,6 +24,7 @@ class WordClockBinarySensorDescription(BinarySensorEntityDescription):
     """Binary sensor description with a value extractor."""
 
     value_fn: Callable[[dict[str, Any]], bool] = lambda status: False
+    supported_fn: Callable[[dict[str, Any]], bool] = lambda status: True
 
 
 BINARY_SENSORS: tuple[WordClockBinarySensorDescription, ...] = (
@@ -46,6 +47,7 @@ BINARY_SENSORS: tuple[WordClockBinarySensorDescription, ...] = (
         device_class=BinarySensorDeviceClass.UPDATE,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda status: bool(status.get("updateButtonActive")),
+        supported_fn=lambda status: "updateButtonActive" in status,
     ),
 )
 
@@ -57,9 +59,16 @@ async def async_setup_entry(
 ) -> None:
     """Set up the WordClock binary sensors."""
     coordinator = entry.runtime_data
+    status = coordinator.data or {}
+    supported = [d for d in BINARY_SENSORS if d.supported_fn(status)]
+    async_remove_unsupported(
+        hass,
+        coordinator,
+        "binary_sensor",
+        (d.key for d in BINARY_SENSORS if d not in supported),
+    )
     async_add_entities(
-        WordClockBinarySensor(coordinator, description)
-        for description in BINARY_SENSORS
+        WordClockBinarySensor(coordinator, description) for description in supported
     )
 
 

@@ -49,6 +49,9 @@
       "single_minutes": {
         "name": "Visa enstaka minuter"
       },
+      "show_it_is": {
+        "name": "Visa \"ES IST\""
+      },
       "smooth_transition": {
         "name": "Mjuk övergång"
       },

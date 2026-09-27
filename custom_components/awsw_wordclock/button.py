@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 from homeassistant.components.button import (
     ButtonDeviceClass,
@@ -24,9 +26,10 @@ from .const import (
     ACTION_UPDATE_CHECK,
     ACTION_WIFI_OPTIMIZE,
     ACTION_WORD_RESET,
+    is_custom_firmware,
 )
 from .coordinator import WordClockConfigEntry, WordClockCoordinator
-from .entity import WordClockEntity
+from .entity import WordClockEntity, async_remove_unsupported
 
 SYNC_TIME_KEY = "sync_time"
 
@@ -36,6 +39,7 @@ class WordClockButtonDescription(ButtonEntityDescription):
     """Button description carrying the firmware command to run."""
 
     command: str
+    supported_fn: Callable[[dict[str, Any]], bool] = lambda status: True
 
 
 BUTTONS: tuple[WordClockButtonDescription, ...] = (
@@ -75,12 +79,14 @@ BUTTONS: tuple[WordClockButtonDescription, ...] = (
         translation_key="update_check",
         entity_category=EntityCategory.CONFIG,
         command=ACTION_UPDATE_CHECK,
+        supported_fn=lambda status: not is_custom_firmware(status),
     ),
     WordClockButtonDescription(
         key="wifi_optimize",
         translation_key="wifi_optimize",
         entity_category=EntityCategory.CONFIG,
         command=ACTION_WIFI_OPTIMIZE,
+        supported_fn=lambda status: not is_custom_firmware(status),
     ),
 )
 
@@ -92,8 +98,13 @@ async def async_setup_entry(
 ) -> None:
     """Set up the WordClock buttons."""
     coordinator = entry.runtime_data
+    status = coordinator.data or {}
+    supported = [d for d in BUTTONS if d.supported_fn(status)]
+    async_remove_unsupported(
+        hass, coordinator, "button", (d.key for d in BUTTONS if d not in supported)
+    )
     entities: list[ButtonEntity] = [
-        WordClockActionButton(coordinator, description) for description in BUTTONS
+        WordClockActionButton(coordinator, description) for description in supported
     ]
     entities.append(WordClockSyncTimeButton(coordinator))
     async_add_entities(entities)

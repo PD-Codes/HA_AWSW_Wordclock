@@ -17,7 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .coordinator import WordClockConfigEntry, WordClockCoordinator
-from .entity import WordClockEntity
+from .entity import WordClockEntity, async_remove_unsupported
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -25,6 +25,7 @@ class WordClockSensorDescription(SensorEntityDescription):
     """Sensor description with a value extractor."""
 
     value_fn: Callable[[dict[str, Any]], Any] = lambda status: None
+    supported_fn: Callable[[dict[str, Any]], bool] = lambda status: True
 
 
 SENSORS: tuple[WordClockSensorDescription, ...] = (
@@ -64,6 +65,7 @@ SENSORS: tuple[WordClockSensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
         value_fn=lambda status: status.get("availableVersion"),
+        supported_fn=lambda status: "availableVersion" in status,
     ),
     WordClockSensorDescription(
         key="device_time",
@@ -113,8 +115,13 @@ async def async_setup_entry(
 ) -> None:
     """Set up the WordClock diagnostic sensors."""
     coordinator = entry.runtime_data
+    status = coordinator.data or {}
+    supported = [d for d in SENSORS if d.supported_fn(status)]
+    async_remove_unsupported(
+        hass, coordinator, "sensor", (d.key for d in SENSORS if d not in supported)
+    )
     async_add_entities(
-        WordClockSensor(coordinator, description) for description in SENSORS
+        WordClockSensor(coordinator, description) for description in supported
     )
 
 

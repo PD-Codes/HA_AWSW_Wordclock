@@ -49,6 +49,9 @@
       "single_minutes": {
         "name": "Pokaż pojedyncze minuty"
       },
+      "show_it_is": {
+        "name": "Pokaż \"ES IST\""
+      },
       "smooth_transition": {
         "name": "Płynne przejście"
       },
