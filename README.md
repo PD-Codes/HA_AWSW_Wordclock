@@ -11,6 +11,7 @@ Home-Assistant-Integration. Alles läuft lokal, ohne Cloud.
 | --- | --- |
 | `ESP32/` | Quellcode der Firmware (PlatformIO) und fertige `WordClock-full.bin` |
 | `custom_components/awsw_wordclock/` | Home-Assistant-Integration (Installation über HACS) |
+| `3D/` | Sicherung der 3D-Druckdateien von AWSW (CC BY-NC 4.0) |
 | `docs/images/` | Screenshots |
 
 Die kompilierte Firmware hängt außerdem an jedem [Release](../../releases).
@@ -28,13 +29,17 @@ Die kompilierte Firmware hängt außerdem an jedem [Release](../../releases).
 
 ## Hardware
 
-- ESP32 (z. B. ESP32 D1 mini)
+- NodeMCU ESP32 mit USB-C (ältere D1-mini-ESP32 laufen auch)
 - 16×16 WS2812B-Matrix, Datenleitung an **GPIO32**, Start oben rechts im Zickzack
-- 5-V-Netzteil (die Firmware begrenzt die LED-Leistung standardmäßig auf 50 %)
+- USB-Netzteil 5 V / 3 A (die Firmware begrenzt die LED-Leistung standardmäßig auf 50 %)
 
 ### 3D-Druckdateien
 
-**Bald verfügbar.**
+Gehäuse und Frontplatten gibt es auf Printables:
+[WordClock 16x16 (2024) von AWSW](https://www.printables.com/model/768062-wordclock-16x16-2024)
+
+Eine Sicherungskopie inkl. Druckhinweisen, Teileliste und Verkabelung liegt in [`3D/`](3D/)
+(Lizenz: CC BY-NC 4.0 von AWSW).
 
 ## Firmware flashen
 
@@ -180,4 +185,7 @@ Die GitHub Action baut die Firmware mit derselben Versionsnummer, erstellt das R
 
 ## Lizenz
 
-MIT – siehe [LICENSE](LICENSE).
+Firmware und Integration: MIT – siehe [LICENSE](LICENSE).
+
+Die 3D-Druckdateien in `3D/` sind von AWSW und stehen unter
+[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.de) (Namensnennung, nicht kommerziell).
