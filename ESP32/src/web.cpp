@@ -99,7 +99,7 @@ static void handleStatus() {
   doc["timeServer"] = cfg.timeServer;
   doc["timeZone"] = cfg.timeZone;
   doc["ntpOk"] = displayTimeValid();
-  doc["ntpStatus"] = displayTimeValid() ? "Time synchronized" : "Waiting for time server";
+  doc["ntpStatus"] = displayTimeValid() ? "Zeit synchronisiert" : "Warte auf Zeitserver";
   doc["language"] = 0;
   doc["languageName"] = "Deutsch";
   doc["mode"] = (int)displayMode();
@@ -187,10 +187,10 @@ static void handleSet() {
   if (timeChanged) applyTimeConfig();
   displayRefresh();
 
-  if (errors.length()) { sendResult(false, "Invalid value: " + errors); return; }
-  String msg = "Saved";
-  if (ignored.length()) msg += " (ignored: " + ignored + ")";
-  if (hostnameChanged) msg += " - hostname applies after restart";
+  if (errors.length()) { sendResult(false, "Ungültiger Wert: " + errors); return; }
+  String msg = "Gespeichert";
+  if (ignored.length()) msg += " (ignoriert: " + ignored + ")";
+  if (hostnameChanged) msg += " - Hostname gilt nach Neustart";
   sendResult(true, msg);
 }
 
@@ -198,46 +198,46 @@ static void handleSet() {
 static void handleAction() {
   String cmd = server.arg("cmd");
   if (cmd == "restart") {
-    sendResult(true, "Restarting", true);
+    sendResult(true, "Neustart...", true);
     displayStatusWord(10, "NEUSTART");
     scheduleRestart();
   } else if (cmd == "test") {
     displaySetMode(MODE_LEDTEST);
-    sendResult(true, "LED test started");
+    sendResult(true, "LED-Test gestartet");
   } else if (cmd == "digitalTimeTest") {
     displayDigital(5000);
-    sendResult(true, "Showing digital time");
+    sendResult(true, "Digitale Uhrzeit");
   } else if (cmd == "resetExtraWords") {
     for (uint8_t i = 0; i < EXTRA_WORD_COUNT; i++) cfg.words[i].active = false;
     settingsSave();
-    sendResult(true, "All extra words off");
+    sendResult(true, "Alle Extra-Wörter aus");
   } else if (cmd == "wordReset") {
     resetExtraWords();
     settingsSave();
-    sendResult(true, "Extra words reset to default colors");
+    sendResult(true, "Wortfarben zurückgesetzt");
   } else if (cmd == "calibrate") {
     displaySetMode(MODE_CALIBRATE);
-    sendResult(true, "Calibration pattern");
+    sendResult(true, "Kalibriermuster");
   } else if (cmd == "chase") {
     displaySetMode(MODE_CHASE);
-    sendResult(true, "Chase test");
+    sendResult(true, "Lauflicht-Test");
   } else if (cmd == "wordCycle") {
     displaySetMode(MODE_WORDCYCLE);
-    sendResult(true, "Cycling extra words");
+    sendResult(true, "Extra-Wörter werden durchlaufen");
   } else if (cmd == "allOn") {
     displaySetMode(MODE_ALLON);
-    sendResult(true, "All LEDs on");
+    sendResult(true, "Alle LEDs an");
   } else if (cmd == "stop") {
     displaySetMode(MODE_CLOCK);
-    sendResult(true, "Back to clock");
+    sendResult(true, "Zurück zur Uhr");
   } else if (cmd == "wifiReset") {
-    sendResult(true, "WiFi settings cleared, restarting into WPS / setup mode", true);
+    sendResult(true, "WLAN gelöscht, Neustart in WPS-/Einrichtungsmodus", true);
     WiFiManager wm;
     wm.resetSettings();
     displayStatusWord(3, "WLAN");
     scheduleRestart();
   } else {
-    sendResult(false, "Unknown or unsupported command: " + cmd);
+    sendResult(false, "Unbekannter Befehl: " + cmd);
   }
   displayRefresh();
 }
@@ -245,12 +245,12 @@ static void handleAction() {
 // ---------- /api/ticker, /api/time, /api/preview ----------
 static void handleTicker() {
   String text = server.arg("text");
-  if (text.length() == 0) { sendResult(false, "Missing text"); return; }
+  if (text.length() == 0) { sendResult(false, "Text fehlt"); return; }
   if (text.length() > 200) text = text.substring(0, 200);
   uint32_t color;
   if (server.hasArg("color") && hexToColor(server.arg("color"), color)) displayTicker(text, color);
   else displayTicker(text);
-  sendResult(true, "Ticker started");
+  sendResult(true, "Lauftext gestartet");
 }
 
 // Accepts ISO 8601 local time, e.g. 2026-09-27T20:15:00+02:00 (offset is ignored)
@@ -258,7 +258,7 @@ static void handleTime() {
   int y, mo, d, h, mi, s = 0;
   String v = server.arg("value");
   if (sscanf(v.c_str(), "%d-%d-%dT%d:%d:%d", &y, &mo, &d, &h, &mi, &s) < 5) {
-    sendResult(false, "Invalid timestamp");
+    sendResult(false, "Ungültiger Zeitstempel");
     return;
   }
   tm t = {};
@@ -272,7 +272,7 @@ static void handleTime() {
   timeval tv = {mktime(&t), 0};
   settimeofday(&tv, nullptr);
   displayRefresh();
-  sendResult(true, "Time set");
+  sendResult(true, "Zeit gesetzt");
 }
 
 static void handlePreview() {
@@ -304,7 +304,7 @@ void webSetup() {
   server.on("/update", HTTP_POST,
     []() {
       bool ok = !Update.hasError();
-      sendResult(ok, ok ? "Update OK, restarting" : "Update failed", ok);
+      sendResult(ok, ok ? "Update OK, Neustart..." : "Update fehlgeschlagen", ok);
       if (ok) scheduleRestart(1000);
       else displaySetMode(MODE_CLOCK);
     },
@@ -322,7 +322,7 @@ void webSetup() {
       }
     });
 
-  server.onNotFound([]() { sendResult(false, "Not found"); });
+  server.onNotFound([]() { sendResult(false, "Nicht gefunden"); });
   server.begin();
 }
 

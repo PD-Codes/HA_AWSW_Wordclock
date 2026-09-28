@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "description": "Gib die Adresse deiner WordClock ein. Wörter, Farben und Einstellungen werden direkt vom Gerät gelesen.",
+        "description": "Gib die IP-Adresse oder den Hostnamen deiner WordClock ein (z. B. wordclock.local). Wörter, Farben und Einstellungen werden direkt von der Uhr gelesen.",
         "data": {
           "host": "IP-Adresse oder Hostname"
         }
@@ -17,7 +17,7 @@
     "error": {
       "invalid_host": "Das ist keine gültige IP-Adresse und kein gültiger Hostname.",
       "cannot_connect": "Die WordClock ist unter dieser Adresse nicht erreichbar.",
-      "unknown_device": "Da antwortet etwas, aber es sieht nicht nach einer WordClock mit Firmware V5 oder neuer aus.",
+      "unknown_device": "Da antwortet etwas, aber es sieht nicht nach einer WordClock aus (WordClock-Firmware oder AWSW-Firmware ab V5 nötig).",
       "unknown": "Unerwarteter Fehler. Details stehen im Home-Assistant-Log."
     },
     "abort": {
@@ -62,7 +62,7 @@
         "name": "Zufällige Tagesfarben"
       },
       "startup_animation": {
-        "name": "Starttext"
+        "name": "Startanimation"
       },
       "show_ip": {
         "name": "IP beim Start anzeigen"
@@ -125,7 +125,7 @@
         "name": "Digitalzeit-Test"
       },
       "word_reset": {
-        "name": "Wortanzeige zurücksetzen"
+        "name": "Wortfarben zurücksetzen"
       },
       "reset_extra_words": {
         "name": "Alle Extra-Wörter aus"

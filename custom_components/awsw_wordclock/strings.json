@@ -2,147 +2,147 @@
   "config": {
     "step": {
       "user": {
-        "description": "Enter the address of your WordClock. The words, colours and settings are read from the device itself.",
+        "description": "Gib die IP-Adresse oder den Hostnamen deiner WordClock ein (z. B. wordclock.local). Wörter, Farben und Einstellungen werden direkt von der Uhr gelesen.",
         "data": {
-          "host": "IP address or hostname"
+          "host": "IP-Adresse oder Hostname"
         }
       },
       "reconfigure": {
-        "description": "Update the address of your WordClock.",
+        "description": "Adresse deiner WordClock aktualisieren.",
         "data": {
-          "host": "IP address or hostname"
+          "host": "IP-Adresse oder Hostname"
         }
       }
     },
     "error": {
-      "invalid_host": "That is not a valid IP address or hostname.",
-      "cannot_connect": "Could not reach the WordClock at that address.",
-      "unknown_device": "Something answered, but it does not look like a WordClock running firmware V5 or newer.",
-      "unknown": "Unexpected error. Check the Home Assistant log for details."
+      "invalid_host": "Das ist keine gültige IP-Adresse und kein gültiger Hostname.",
+      "cannot_connect": "Die WordClock ist unter dieser Adresse nicht erreichbar.",
+      "unknown_device": "Da antwortet etwas, aber es sieht nicht nach einer WordClock aus (WordClock-Firmware oder AWSW-Firmware ab V5 nötig).",
+      "unknown": "Unerwarteter Fehler. Details stehen im Home-Assistant-Log."
     },
     "abort": {
-      "already_configured": "This WordClock is already configured.",
-      "reconfigure_successful": "The address was updated.",
-      "wrong_device": "That address belongs to a different WordClock.",
-      "unique_id_mismatch": "That address belongs to a different WordClock."
+      "already_configured": "Diese WordClock ist bereits eingerichtet.",
+      "reconfigure_successful": "Die Adresse wurde aktualisiert.",
+      "wrong_device": "Diese Adresse gehört zu einer anderen WordClock.",
+      "unique_id_mismatch": "Diese Adresse gehört zu einer anderen WordClock."
     }
   },
   "entity": {
     "light": {
       "time_day": {
-        "name": "Time"
+        "name": "Zeit"
       },
       "time_night": {
-        "name": "Time (night)"
+        "name": "Zeit (Nacht)"
       },
       "background_day": {
-        "name": "Background"
+        "name": "Hintergrund"
       },
       "background_night": {
-        "name": "Background (night)"
+        "name": "Hintergrund (Nacht)"
       }
     },
     "switch": {
       "night_mode": {
-        "name": "Night mode"
+        "name": "Nachtmodus"
       },
       "single_minutes": {
-        "name": "Show single minutes"
+        "name": "Einzelminuten anzeigen"
       },
       "show_it_is": {
-        "name": "Show \"ES IST\""
+        "name": "„ES IST“ anzeigen"
       },
       "smooth_transition": {
-        "name": "Smooth transition"
+        "name": "Sanfter Übergang"
       },
       "digital_hour_chime": {
-        "name": "Digital time on the hour"
+        "name": "Digitale Zeit zur vollen Stunde"
       },
       "random_day_colors": {
-        "name": "Random daily colours"
+        "name": "Zufällige Tagesfarben"
       },
       "startup_animation": {
-        "name": "Startup text"
+        "name": "Startanimation"
       },
       "show_ip": {
-        "name": "Show IP on startup"
+        "name": "IP beim Start anzeigen"
       }
     },
     "sensor": {
       "rssi": {
-        "name": "Wi-Fi signal"
+        "name": "WLAN-Signal"
       },
       "ssid": {
-        "name": "Wi-Fi network"
+        "name": "WLAN-Netzwerk"
       },
       "ip": {
-        "name": "IP address"
+        "name": "IP-Adresse"
       },
       "version": {
-        "name": "Firmware version"
+        "name": "Firmware-Version"
       },
       "available_version": {
-        "name": "Available version"
+        "name": "Verfügbare Version"
       },
       "device_time": {
-        "name": "Device time"
+        "name": "Gerätezeit"
       },
       "night_status": {
-        "name": "Day/night status"
+        "name": "Tag-/Nacht-Status"
       },
       "ntp_status": {
-        "name": "NTP status"
+        "name": "NTP-Status"
       },
       "time_server": {
-        "name": "Time server"
+        "name": "Zeitserver"
       },
       "language_name": {
-        "name": "Clock language"
+        "name": "Sprache der Uhr"
       },
       "intensity": {
-        "name": "Current brightness"
+        "name": "Aktuelle Helligkeit"
       }
     },
     "binary_sensor": {
       "ntp_ok": {
-        "name": "Time synchronised"
+        "name": "Zeit synchronisiert"
       },
       "online_mode": {
-        "name": "Online mode"
+        "name": "Online-Modus"
       },
       "update_available": {
-        "name": "Update available"
+        "name": "Update verfügbar"
       }
     },
     "button": {
       "restart": {
-        "name": "Restart"
+        "name": "Neustart"
       },
       "test": {
-        "name": "LED test"
+        "name": "LED-Test"
       },
       "digital_time_test": {
-        "name": "Digital time test"
+        "name": "Digitalzeit-Test"
       },
       "word_reset": {
-        "name": "Reset word display"
+        "name": "Wortfarben zurücksetzen"
       },
       "reset_extra_words": {
-        "name": "Turn all extra words off"
+        "name": "Alle Extra-Wörter aus"
       },
       "update_check": {
-        "name": "Check for updates"
+        "name": "Nach Updates suchen"
       },
       "wifi_optimize": {
-        "name": "Optimise Wi-Fi"
+        "name": "WLAN optimieren"
       },
       "sync_time": {
-        "name": "Sync time"
+        "name": "Zeit synchronisieren"
       }
     },
     "notify": {
       "ticker": {
-        "name": "Scrolling text"
+        "name": "Lauftext"
       }
     }
   }

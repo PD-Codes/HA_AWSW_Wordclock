@@ -2,7 +2,9 @@
 #include <Arduino.h>
 #include "layout.h"
 
-#define FW_VERSION "V6.0.0"
+#ifndef FW_VERSION
+#define FW_VERSION "1.0.0"   // overridden by the release build (-DFW_VERSION=...)
+#endif
 #define INTENSITY_LIMIT 50   // brightness values are 0..INTENSITY_LIMIT (same scale as AWSW V5)
 
 struct WordState {

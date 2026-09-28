@@ -1,5 +1,8 @@
 # Creates a GitHub release whenever the version in manifest.json changes.
-# HACS picks up new releases and offers them as an update in Home Assistant.
+# - HACS picks up the release and offers the integration update in Home Assistant.
+# - The ESP32 firmware is built with the same version number and attached to the release:
+#     WordClock-full.bin  -> first flash via USB (address 0x0)
+#     WordClock-ota.bin   -> update via the clock's web interface
 # Workflow: bump "version" in manifest.json -> commit -> push to main. Done.
 name: Release
 
@@ -23,18 +26,45 @@ jobs:
 
       - name: Read version from manifest
         id: version
-        run: echo "value=$(jq -r .version custom_components/awsw_wordclock/manifest.json)" >> "$GITHUB_OUTPUT"
+        run: |
+          VERSION=$(jq -r .version custom_components/awsw_wordclock/manifest.json)
+          echo "value=${VERSION}" >> "$GITHUB_OUTPUT"
+          if git rev-parse "refs/tags/${VERSION}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Create release if the tag does not exist yet
+      - uses: actions/setup-python@v5
+        if: steps.version.outputs.exists == 'false'
+        with:
+          python-version: "3.12"
+
+      - name: Build firmware
+        if: steps.version.outputs.exists == 'false'
+        env:
+          PLATFORMIO_BUILD_FLAGS: -DFW_VERSION=\"${{ steps.version.outputs.value }}\"
+        run: |
+          pip install platformio esptool
+          pio run -d ESP32
+          B=ESP32/.pio/build/esp32
+          BOOT=$(find ~/.platformio/packages/framework-arduinoespressif32 -name boot_app0.bin | head -1)
+          python -m esptool --chip esp32 merge_bin -o WordClock-full.bin \
+            0x1000 $B/bootloader.bin 0x8000 $B/partitions.bin 0xe000 "$BOOT" 0x10000 $B/firmware.bin
+          cp $B/firmware.bin WordClock-ota.bin
+
+      - name: Create release
+        if: steps.version.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.value }}
         run: |
-          if git rev-parse "refs/tags/${VERSION}" >/dev/null 2>&1; then
-            echo "Release ${VERSION} already exists - nothing to do."
-            exit 0
-          fi
           gh release create "${VERSION}" \
             --target "${GITHUB_SHA}" \
             --title "${VERSION}" \
-            --generate-notes
+            --generate-notes \
+            WordClock-full.bin WordClock-ota.bin
+
+      - name: Nothing to do
+        if: steps.version.outputs.exists == 'true'
+        run: echo "Release ${{ steps.version.outputs.value }} already exists."

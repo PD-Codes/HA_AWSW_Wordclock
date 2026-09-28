@@ -444,8 +444,8 @@ uint8_t displayIntensity() {
 }
 
 String displayNightStatus() {
-  if (!cfg.nightMode) return "Night mode not used";
-  return night ? "Night" : "Day";
+  if (!cfg.nightMode) return "Nachtmodus nicht aktiv";
+  return night ? "Nacht" : "Tag";
 }
 
 void displayPreview(String& out) {
